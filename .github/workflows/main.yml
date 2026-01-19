@@ -1,30 +1,28 @@
-name: torrenttools-2026
+name: Fixed-Torrent-Creator-2026
 on:
   workflow_dispatch:
     inputs:
-      name:
-        description: 'Name of the torrent file'
-        required: true
-        default: 'My_Download'
       url:
-        description: 'Direct Link (e.g., Pixeldrain)'
+        description: 'Direct Link (Pixeldrain)'
         required: true
         default: 'https://pixeldrain.com'
-      file_name:
-        description: 'Name of the file inside the torrent'
+      name:
+        description: 'Torrent Filename'
         required: true
-        default: 'downloaded_file.data'
+        default: 'pixeldrain_file'
 
 jobs:
-  create_torrent:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Tools
+      - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y aria2 wget
-          # Download torrenttools AppImage directly to avoid PPA errors
+          # FIX: libfuse2 is required for AppImages on Ubuntu 22.04/24.04
+          sudo apt-get install -y aria2 wget libfuse2
+          
+          # Download and prepare torrenttools
           wget 
