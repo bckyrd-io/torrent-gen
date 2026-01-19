@@ -1,4 +1,4 @@
-name: Fixed-Torrent-2026
+name: Torrent-Gen-2026-Docker
 on:
   workflow_dispatch:
     inputs:
@@ -9,7 +9,7 @@ on:
       name:
         description: 'Torrent Filename'
         required: true
-        default: 'my_torrent_file'
+        default: 'pixeldrain_file'
 
 jobs:
   build:
@@ -18,27 +18,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          # FIX for Ubuntu 24.04: Use libfuse2t64 instead of libfuse2
-          sudo apt-get install -y aria2 wget libfuse2t64
-          
-          # Download torrenttools
-          wget https://github.com -O torrenttools
-          chmod +x torrenttools
-
       - name: Download File
-        run: aria2c -x 16 -o "data.file" "${{ github.event.inputs.url }}"
-
-      - name: Create Torrent
         run: |
-          # FIX for 2026 Runners: Extract AppImage to bypass AppArmor restrictions
-          ./torrenttools --appimage-extract-and-run create -v 1 \
-            -o "${{ github.event.inputs.name }}.torrent" \
+          sudo apt-get update && sudo apt-get install -y aria2
+          aria2c -x 16 -o "data.file" "${{ github.event.inputs.url }}"
+
+      - name: Create Torrent via Docker
+        run: |
+          # We mount the current directory to /data inside the container
+          # This bypasses all AppImage/FUSE/Ubuntu 24.04 library errors
+          docker run --rm -v $(pwd):/data fbdtemme/torrenttools create \
+            -v 1 \
+            -o "/data/${{ github.event.inputs.name }}.torrent" \
             -w "${{ github.event.inputs.url }}" \
             -a udp://tracker.opentrackr.org:1337/announce \
-            "data.file"
+            "/data/data.file"
 
       - name: Upload Result
         uses: actions/upload-artifact@v4
