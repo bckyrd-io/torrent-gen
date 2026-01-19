@@ -1,4 +1,4 @@
-name: Fixed-Torrent-Creator-2026
+name: Fixed-Torrent-2026
 on:
   workflow_dispatch:
     inputs:
@@ -9,7 +9,7 @@ on:
       name:
         description: 'Torrent Filename'
         required: true
-        default: 'pixeldrain_file'
+        default: 'my_torrent_file'
 
 jobs:
   build:
@@ -21,8 +21,27 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          # FIX: libfuse2 is required for AppImages on Ubuntu 22.04/24.04
-          sudo apt-get install -y aria2 wget libfuse2
+          # FIX for Ubuntu 24.04: Use libfuse2t64 instead of libfuse2
+          sudo apt-get install -y aria2 wget libfuse2t64
           
-          # Download and prepare torrenttools
-          wget 
+          # Download torrenttools
+          wget https://github.com -O torrenttools
+          chmod +x torrenttools
+
+      - name: Download File
+        run: aria2c -x 16 -o "data.file" "${{ github.event.inputs.url }}"
+
+      - name: Create Torrent
+        run: |
+          # FIX for 2026 Runners: Extract AppImage to bypass AppArmor restrictions
+          ./torrenttools --appimage-extract-and-run create -v 1 \
+            -o "${{ github.event.inputs.name }}.torrent" \
+            -w "${{ github.event.inputs.url }}" \
+            -a udp://tracker.opentrackr.org:1337/announce \
+            "data.file"
+
+      - name: Upload Result
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.inputs.name }}
+          path: ${{ github.event.inputs.name }}.torrent
